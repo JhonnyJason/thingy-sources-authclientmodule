@@ -9,10 +9,10 @@ import { createLogFunctions } from "thingy-debug"
 import * as secUtl from "secret-manager-crypto-utils"
 import * as tbut from "thingy-byte-utils"
 import * as sess from "thingy-session-utils"
+import * as validatableStamp from "validatabletimestamp"
 
 ############################################################
 import * as sci from "./authenticationinterface.js"
-import * as validatableStamp from "./validatabletimestampmodule.js"
 
 #endregion
 
