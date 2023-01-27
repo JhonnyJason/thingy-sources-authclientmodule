@@ -10,6 +10,8 @@ import  { Client}  from "./authclient.js"
 
 ############################################################
 export createClient = (o) ->
+    log "createClient"
+    olog o
     ## TODO add some sophistication
     return new Client(o.serverURL, o.secretKeyHex)
 
