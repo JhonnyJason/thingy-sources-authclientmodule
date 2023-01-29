@@ -62,7 +62,8 @@ export class Client
         return @publicKeyHex
 
     getAuthCode: ->
-        # serverId = await @getServerId()
+        log "Client.getAuthCode"
+        log "authCode: "+@nextAuthCode
         if @nextAuthCode? then return @nextAuthCode
 
         # await indirectSessionSetup(this)
@@ -72,15 +73,30 @@ export class Client
         return @nextAuthCode
     
     createNextAuthCode: (request) ->
-        log "authclient.createNextAuthCode"
+        log "Client.createNextAuthCode"
         if !@seedHex? then await @generateSeedEntropy()
         @nextAuthCode = await sess.createAuthCode(@seedHex, request)
         authCode = @nextAuthCode
-        request = request
+        # request = request
         seedHex = @seedHex
-        olog { seedHex, authCode, request }
+ 
+        # olog {request}
+        # olog {seedHex}
+        # log "result:"
+        # olog { authCode }
         return true
 
+    onError: (error) ->
+        log "noticeError"
+        @nextAuthCode = null
+    
+        # log error
+        # if error.indexOf("authentication: Invalid authCode!") > -1
+        #     @nextAuthCode = null
+
+        ## TODO check if we have other errors to handle
+        throw error
+        
     ########################################################
     generateSeedEntropy: ->
         serverId = await @getServerId()
@@ -95,7 +111,9 @@ export class Client
 ############################################################
 #region misc Helpers
 
+############################################################
 directSessionSetup = (client) ->
+    log "directSessionSetup"
     secretKey = client.secretKeyHex
 
     publicKey = await client.getPublicKey()
@@ -112,7 +130,8 @@ directSessionSetup = (client) ->
 
     request = { publicKey, timestamp, nonce, signature }
     request = JSON.stringify(request)
-    
+
+    log "/startSession + generateNextAuthCode"    
     replyP = sci.startSession(sciURL, publicKey, timestamp, nonce, signature)
     authP = client.createNextAuthCode(request)
     [reply, ok] = await Promise.all([replyP, authP])
@@ -123,16 +142,14 @@ directSessionSetup = (client) ->
     return
 
 ############################################################
-indirectSessionSetup = (client) ->
-    return
-
-
-############################################################
 implicitSessionSetup = (client) ->
+    log "implicitSessionSetup - TODO"
+    ## TODO
     return
 
 ############################################################
 getValidatedNodeId = (client) ->
+    log "getValidatedNodeId"
     try 
         response = await getNodeId(client)
         # {
@@ -228,21 +245,21 @@ getNodeId = (client) ->
 
 
 ############################################################
-startSession = (action, client) ->
-    server = client.serverURL
-    publicKey = client.getPublicKey()
-    secretKey = client.secretKeyHex
-    timestamp = validatableStamp.create()
+# startSession = (action, client) ->
+#     server = client.serverURL
+#     publicKey = client.getPublicKey()
+#     secretKey = client.secretKeyHex
+#     timestamp = validatableStamp.create()
 
-    nonce = client.nonce
-    client.incNonce()
+#     nonce = client.nonce
+#     client.incNonce()
 
-    payload = {publicKey, action, timestamp, nonce}
-    route = "/createAuthCode"
-    signature = await createSignature(payload, route, secretKey)
-    reply =  await sci.createAuthCode(server, publicKey, action, timestamp, signature, nonce)
-    if reply.error? then throw new Error("createAuthCode replied with error: "+reply.error)
-    return reply
+#     payload = {publicKey, action, timestamp, nonce}
+#     route = "/createAuthCode"
+#     signature = await createSignature(payload, route, secretKey)
+#     reply =  await sci.createAuthCode(server, publicKey, action, timestamp, signature, nonce)
+#     if reply.error? then throw new Error("createAuthCode replied with error: "+reply.error)
+#     return reply
     
 ############################################################
 addClientToServe = (clientPublicKey, client) ->
